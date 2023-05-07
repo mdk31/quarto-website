@@ -3,9 +3,33 @@ title: "Computational Graph Approach to Backpropagation"
 draft: true
 filters:
   - pseudocode
+bibliography: references.bib
 ---
 
 # Traditional Approach
+
+When I took my first class on neural networks, the backpropagation algorithm was presented as in @hagan2014neural. This textbook presented purely as a set of mathematical equations that describe how the gradients are computed layer by layer using the chain rule. It introduces quantities called sensitivities that measure the changes to the loss function from changes in any particular layer of the neural network. These sensitivities are then backpropagated through the network.
+
+Although the text presents the backpropagation algorithm using sensitivies step by step, I still found it fairly uninuitive and difficult to visualize. It also seemed to encourage memorization of the equations rather than a full understanding of the material. As a result,  I find the computational graph approach as presented in @ to be a more comprehensible presentation of the material. This computational graph approach provides a visual approach that is more intutitive, in my opinion, than the traditional calculus approach. 
+
+# Computational Graphs
+
+In contrast, the computational graph approach presents the neural network as a graph where each node represents a mathematical operation and each edge represents the flow of data. By following the flow of data through the graph, it is easy to see how the gradients are computed layer by layer during backpropagation. This makes it easier to understand the inner workings of the backpropagation algorithm and to debug and optimize neural network architectures.
+
+In addition, the computational graph approach is also more general and can be applied to any type of neural network architecture, including recurrent neural networks and convolutional neural networks. This makes it a powerful tool for understanding and analyzing deep learning models.
+
+
+In the traditional approach to explaining backpropagation, the algorithm is presented as a series of mathematical equations that describe how the gradients are computed layer by layer. This can be difficult to understand and visualize, especially for complex neural network architectures.
+
+
+
+ Each edge of the graph $$\mathcal{G}$$ is a mathematical operation
+ $hi$
+ 
+This is an inline equation: \(3 - \sqrt{4} = 2\).
+
+This is a display equation: \[ \int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi} \]
+
 
 $$
 \begin{align}
