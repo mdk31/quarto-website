@@ -1,0 +1,24 @@
+project:
+  type: website
+  resources:
+    - resume.pdf
+
+website:
+  title: "Matt Kosko's Website"
+  navbar:
+    pinned: true
+    left:
+      - about.qmd
+      - text: Posts
+        href: posts/
+    right:
+      - icon: github
+        href: https://github.com/mdk31
+
+format:
+  html:
+    theme: [sandstone, _variables.scss]
+    css: styles.css
+
+editor: visual
+

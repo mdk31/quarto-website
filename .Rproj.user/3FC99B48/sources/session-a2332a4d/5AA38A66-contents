@@ -1,0 +1,20 @@
+---
+title: "My Website"
+toc: false
+listing: 
+  - id: posts
+    contents: posts/*{.qmd,.markdown}
+    sort: "date desc"
+    type: default
+    fields: [date, title, description, categories, author, reading-time]
+    categories: cloud
+    sort-ui: false
+    filter-ui: false
+    page-size: 5
+---
+## Posts
+
+::: {#posts}
+:::
+
+
