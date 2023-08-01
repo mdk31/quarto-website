@@ -6,29 +6,88 @@ filters:
 bibliography: references.bib
 ---
 
-# Traditional Approach
+# Traditional Presentation
 
 When I took my first class on neural networks, the backpropagation algorithm was presented as in @hagan2014neural. This textbook presented purely as a set of mathematical equations that describe how the gradients are computed layer by layer using the chain rule. It introduces quantities called sensitivities that measure the changes to the loss function from changes in any particular layer of the neural network. These sensitivities are then backpropagated through the network.
 
-Although the text presents the backpropagation algorithm using sensitivies step by step, I still found it fairly uninuitive and difficult to visualize. It also seemed to encourage memorization of the equations rather than a full understanding of the material. As a result,  I find the computational graph approach as presented in @ to be a more comprehensible presentation of the material. This computational graph approach provides a visual approach that is more intutitive, in my opinion, than the traditional calculus approach. 
+Although the text presents the backpropagation algorithm using sensitivies step by step, I still found it fairly uninuitive and difficult to visualize. It also seemed to encourage memorization of the equations rather than a complete understanding what's actually going on. As a result, I find the computational graph approach as presented in @goodfellow2016deep to be a more comprehensible presentation of the material. This computational graph approach provides a visual approach that is more intutitive, in my opinion, than the traditional calculus approach. [This excellent blog post](https://colah.github.io/posts/2015-08-Backprop/) discusses the calculation of derivatives on computational graphs. 
+
+In contrast, the computational graph approach explicity represents the neural network as a graph where each node represents a mathematical operation and each edge represents the flow of data. By following the flow of data through the graph, it is easy to see how the gradients are computed layer by layer during backpropagation.
+
+This makes it easier to understand the inner workings of the backpropagation algorithm and to debug and optimize neural network architectures. In addition, the computational graph approach is also more general and can be applied to any type of neural network architecture, including recurrent neural networks and convolutional neural networks. This makes it a powerful tool for understanding and analyzing deep learning models.
 
 # Computational Graphs
 
-In contrast, the computational graph approach presents the neural network as a graph where each node represents a mathematical operation and each edge represents the flow of data. By following the flow of data through the graph, it is easy to see how the gradients are computed layer by layer during backpropagation. This makes it easier to understand the inner workings of the backpropagation algorithm and to debug and optimize neural network architectures.
+In their presentation of the backpropagation, @goodfellow2016deep build up the algorithm from simple function operations to a full connected multilayer perceptron, to the most general algorithm applicable to a wide variety of complex networks with tensor inputs. The bulk of the
 
-In addition, the computational graph approach is also more general and can be applied to any type of neural network architecture, including recurrent neural networks and convolutional neural networks. This makes it a powerful tool for understanding and analyzing deep learning models.
+A computational graph $\mathcal{G}$ is a tuple $(V, E, F)$ of vertices or nodes, directed edges, and function operations. Each node is a variable that takes on particular values; these values are given by a function operation, where the arguments for the function evaluated at a node are determined by the nodes at the tail ends of any incoming edge [@dyer-etal-2016-practical]. See for example the following matrix multiplication operation in Figure @fig-matmult.
 
+```{r, engine='tikz'}
+#| label: fig-matmult
+#| echo: false
+#| fig-cap: "Computational graph for matrix multiplication"
+#| external: true
+#| fig-width: 4
+\begin{tikzpicture}[x=1.5cm, y=1.5cm, every node/.style={draw,circle,minimum size=1cm}]
 
-In the traditional approach to explaining backpropagation, the algorithm is presented as a series of mathematical equations that describe how the gradients are computed layer by layer. This can be difficult to understand and visualize, especially for complex neural network architectures.
+\node (a) at (0, 0) {$\mathbf{A}$};
+\node (b) at (2, 0) {$\mathbf{B}$};
+\node (u) at (1, 2) {$\mathbf{U}$};
 
+% connections
+\draw[->] (a) -- (u);
+\draw[->] (b) -- (u);
+% labels
+\node[draw=none] at (0,-0.75) {$f(\mathbf{X}) = \mathbf{X}$};
+\node[draw=none] at (2,-0.75) {$f(\mathbf{X}) = \mathbf{X}$};
+\node[draw=none, anchor=west] at (1.5, 2) {$f(\mathbf{X}, \mathbf{Y}) = \mathbf{X}\mathbf{Y}$};
+\end{tikzpicture}
+```
 
+The source nodes have the identity operation, then there are two directed nodes that go into the $\mathbf{U}$ node, calcluating the matrix product $\mathbf{AB}$.
 
- Each edge of the graph $$\mathcal{G}$$ is a mathematical operation
- $hi$
- 
-This is an inline equation: \(3 - \sqrt{4} = 2\).
+The value of the computational graph approach in understanding a neural network is that once we have the graph specified, we can quite literally "see" the backpropagation of the sensitivity of the loss function through the network. See for example Figure @fig-simpleback
 
-This is a display equation: \[ \int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi} \]
+```{r, engine='tikz'}
+#| label: fig-simpleback
+#| echo: false
+#| fig-cap: "Simple backpropagation"
+#| external: false
+#| fig-width: 5
+\usetikzlibrary{calc}
+\newcommand\DoubleLine[5][3pt]{%
+  \path(#2)--(#3)coordinate[at start](h1)coordinate[at end](h2);
+  \draw[#4]($(h1)!#1!90:(h2)$) -- ($(h2)!#1!-90:(h1)$);
+  \draw[#5]($(h1)!#1!-90:(h2)$) -- ($(h2)!#1!90:(h1)$);
+}
+\begin{tikzpicture}[x=1.5cm, y=1.5cm, every node/.style={minimum size=1cm}]
+
+\node[draw, circle] (x0) at (0, 0) {$x_0$};
+\node[draw, circle] (x1) at (2, 1) {$x_1$};
+\node[draw, circle] (x2) at (2, -1) {$x_2$};
+\node[draw, circle] (y) at (4, 0) {$y$};
+
+% connections
+\DoubleLine{x0}{x1}{<-,red}{->,blue};
+\DoubleLine{x0}{x2}{<-,red}{->,blue};
+\DoubleLine{x1}{y}{<-,red}{->,blue};
+\DoubleLine{x2}{y}{<-,red}{->,blue};
+
+% labels
+\node[left of=x1, xshift = -0.1cm, red, font = \scriptsize] {$\dfrac{\partial f_1}{\partial x_0}$};
+\node[right of=x0, xshift = 0.1cm, font = \scriptsize, blue] {$f_1(x_0)$};
+
+\node[above of=x2, xshift = -0.5cm, font = \scriptsize, red] {$\dfrac{\partial f_2}{\partial x_0}$};
+\node[right of=x0, xshift = 0.75cm, yshift = -1.5cm, font = \scriptsize, blue] {$f_2(x_0)$};
+
+%\node[left of=x1, minimum size = 0.5, xshift = -0.25cm] {$\dfrac{\partial %f_2}{\partial x_1}$};
+%\node[right of=x1, minimum size = 0.5, xshift = -.5cm] {$f_1(x_0)$};
+\end{tikzpicture}
+```
+
+We can associate every functional operation with a corresponding backpropagation operation, which..
+
+This approach allows for conceptualizing backpropagation as a table-filling algorithm.
 
 
 $$
@@ -47,12 +106,25 @@ see @eq-abc.
 #| fig-cap: "A line plot on a polar axis"
 #| external: false
 #| fig-width: 4
-\begin{tikzpicture}
- \draw (0,0) circle (2cm);
+\usetikzlibrary{calc}
+\newcommand\DoubleLine[5][3pt]{%
+  \path(#2)--(#3)coordinate[at start](h1)coordinate[at end](h2);
+  \draw[#4]($(h1)!#1!90:(h2)$)--($(h2)!#1!-90:(h1)$);
+  \draw[#5]($(h1)!#1!-90:(h2)$)--($(h2)!#1!90:(h1)$);
+}
+\begin{tikzpicture}[myn/.style={circle,draw,inner sep=0.25cm,outer sep=3pt}]
+  \node[myn] (A) at (0,0) {A};
+  \node[myn] (B) at (5,0) {B};
+  \node[myn] (C) at (5,3) {C};
+  \node[myn] (Z) at (10,-5) {Z};
+% double lines:
+  \foreach \p in {A,C,Z}{
+    \DoubleLine{B}{\p}{<-,red}{->,blue}
+  }
 \end{tikzpicture}
 ```
 
-```pseudocode
+``` pseudocode
 #| label: alg-quicksort
 #| html-indent-size: "1.2em"
 #| html-comment-delimiter: "//"
