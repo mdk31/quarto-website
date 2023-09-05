@@ -1,6 +1,5 @@
 ---
 title: "Hyperparameter Optimization"
-draft: true
 categories:
   - machine learning
 bibliography: /Users/macbookair/Documents/quarto-website/posts/references.bib
