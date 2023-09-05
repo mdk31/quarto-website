@@ -10,7 +10,7 @@ bibliography: references.bib
 
 When I took my first class on neural networks, the backpropagation algorithm was presented as in @hagan2014neural. This textbook presented purely as a set of mathematical equations that describe how the gradients are computed layer by layer using the chain rule. It introduces quantities called sensitivities that measure the changes to the loss function from changes in any particular layer of the neural network. These sensitivities are then backpropagated through the network.
 
-Although the text presents the backpropagation algorithm using sensitivies step by step, I still found it fairly uninuitive and difficult to visualize. It also seemed to encourage memorization of the equations rather than a complete understanding what's actually going on. As a result, I find the computational graph approach as presented in @goodfellow2016deep to be a more comprehensible presentation of the material. This computational graph approach provides a visual approach that is more intutitive, in my opinion, than the traditional calculus approach. [This excellent blog post](https://colah.github.io/posts/2015-08-Backprop/) discusses the calculation of derivatives on computational graphs. 
+Although the text presents the backpropagation algorithm using sensitivies step by step, I still found it fairly uninuitive and difficult to visualize. It also seemed to encourage memorization of the equations rather than a complete understanding what's actually going on. As a result, I find the computational graph approach as presented in @goodfellow2016deep to be a more comprehensible presentation of the material. This computational graph approach provides a visual approach that is more intutitive, in my opinion, than the traditional calculus approach. [This excellent blog post](https://colah.github.io/posts/2015-08-Backprop/) discusses the calculation of derivatives on computational graphs.
 
 In contrast, the computational graph approach explicity represents the neural network as a graph where each node represents a mathematical operation and each edge represents the flow of data. By following the flow of data through the graph, it is easy to see how the gradients are computed layer by layer during backpropagation.
 
@@ -88,7 +88,6 @@ The value of the computational graph approach in understanding a neural network 
 We can associate every functional operation with a corresponding backpropagation operation, which..
 
 This approach allows for conceptualizing backpropagation as a table-filling algorithm.
-
 
 $$
 \begin{align}
