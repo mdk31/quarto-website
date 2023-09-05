@@ -1,6 +1,6 @@
 ---
 title: "Hyperparameter Optimization"
-draft: false
+draft: true
 categories:
   - machine learning
 bibliography: /Users/macbookair/Documents/quarto-website/posts/references.bib
@@ -16,9 +16,9 @@ bibliography: /Users/macbookair/Documents/quarto-website/posts/references.bib
 
 # Introduction
 
-Hyperparameter optimization is a critical aspect of machine learning. When optimizing hyperparameters, our objective is to discover the ideal configuration of hyperparameters for a given model. While standard parameters are adjusted during the training process based on data, hyperparameters, such as learning rates or regularization terms, are set prior to the learning phase. 
+Hyperparameter optimization is a critical aspect of machine learning. When optimizing hyperparameters, our objective is to discover the ideal configuration of hyperparameters for a given model. While standard parameters are adjusted during the training process based on data, hyperparameters, such as learning rates or regularization terms, are set prior to the learning phase.
 
-The standard technique for hyperparameter optimization (HO) is grid search where every possible combination of hyperparameters is tested. Because of the vast potential combinations of hyperparameters, random search, where a random subset of hyperparameters is used, is often attempted. The problem with either of these techniques is that they require you to train multiple models that will later be discarded [@mlodozeniec2023hyperparameter, p. 1]. Moreover, neither of these methods are scalable to cases with many hyperparameters [@lorraine2020optimizing;@maclaurin2015gradient]
+The standard technique for hyperparameter optimization (HO) is grid search where every possible combination of hyperparameters is tested. Because of the vast potential combinations of hyperparameters, random search, where a random subset of hyperparameters is used, is often attempted. The problem with either of these techniques is that they require you to train multiple models that will later be discarded [@mlodozeniec2023hyperparameter, p. 1]. Moreover, neither of these methods are scalable to cases with many hyperparameters [@lorraine2020optimizing; @maclaurin2015gradient]
 
 It would be preferable if we could update hyperparameters in the same way we update model parameters, i.e., through the use of gradient-based methods. Ideally, we would calculate the derivative of the loss function with respect to each hyperparameter and then update the hyperparameters, i.e.:
 
@@ -26,7 +26,7 @@ $$
 \lambda_{t+1} = \lambda_t - \alpha\dfrac{\partial\mathcal{L}}{\partial \lambda}
 $$
 
-Luckily, there have been a variety of papers published proposing gradient-based methods to update hyperparameters. In this post, I will apply the gradient-based HO outline from @lorraine2020optimizing to a simple neural network with a single weight decay hyperparameter. I thought this would be a good test case to get more familiar with PyTorch, which makes much of the computation extremely easy and efficient. 
+Luckily, there have been a variety of papers published proposing gradient-based methods to update hyperparameters. In this post, I will apply the gradient-based HO outline from @lorraine2020optimizing to a simple neural network with a single weight decay hyperparameter. I thought this would be a good test case to get more familiar with PyTorch, which makes much of the computation extremely easy and efficient.
 
 # Gradient Computation
 
@@ -84,9 +84,9 @@ In other words, solve:
 
 $$
 \dfrac{\partial^2 \mathcal{L}_T}{\partial \mathbf{w}\partial \mathbf{w}^T} \mathbf{x} = \dfrac{\partial \mathcal{L}_V(\boldsymbol\lambda, \mathbf{w}^\ast(\boldsymbol{\lambda}))}{\partial \mathbf{w}^\ast} 
-$$ 
+$$
 
-This can be done without ever actually instantiating the Hessian matrix; it only requires a Hessian vector product, which is easy to calculate in PyTorch. 
+This can be done without ever actually instantiating the Hessian matrix; it only requires a Hessian vector product, which is easy to calculate in PyTorch.
 
 [@lorraine2020optimizing] instead proposes the calculation of the first several terms of the Neumann series:
 
@@ -139,13 +139,13 @@ neumann_approx = neumann_series(v = v, f = grad_y, I = 50)
 torch.isclose(v @ invhess, neumann_approx)
 ```
 
-A sufficient condition for the Neumann series to converge is that the spectral radius (maximum of the eigenvalues) is less than 1. While the above code works, in practice most of the contrived neural network examples I created in Pytorch did not satisfy this sufficient condition and the Neumann series rarely converged. As a result, I decided to stick with the conjugate gradient method. 
+A sufficient condition for the Neumann series to converge is that the spectral radius (maximum of the eigenvalues) is less than 1. While the above code works, in practice most of the contrived neural network examples I created in Pytorch did not satisfy this sufficient condition and the Neumann series rarely converged. As a result, I decided to stick with the conjugate gradient method.
 
 # Results
 
-The full code can be found in the Github [repository](https://github.com/mdk31/hyperparameter-optimization). The actual model parameters are updated using Adam while the hyperparamters are optimized using usual gradient descent. Because the $\lambda$ hyperparameters cannot be negative, we transform the $l_2$ penalty to $\exp(\lambda)$. This poses no problem to the computation, as the exponentiation is added to the computational graph in PyTorch.  
+The full code can be found in the Github [repository](https://github.com/mdk31/hyperparameter-optimization). The actual model parameters are updated using Adam while the hyperparamters are optimized using usual gradient descent. Because the $\lambda$ hyperparameters cannot be negative, we transform the $l_2$ penalty to $\exp(\lambda)$. This poses no problem to the computation, as the exponentiation is added to the computational graph in PyTorch.
 
-@fig-grid shows the validation error from grid search HO. We see that minimal regularization is favored. 
+@fig-grid shows the validation error from grid search HO. We see that minimal regularization is favored.
 
 ```{python}
 import pickle
@@ -177,7 +177,7 @@ plt.legend()
 plt.show()
 ```
 
-By contrast, @fig-ho shows the validation error trajectory by initial lambda use the gradient-based method. We see that, no matter the initial $\lambda$, the validation error rapidly converges to the low validation error trajectory. 
+By contrast, @fig-ho shows the validation error trajectory by initial lambda use the gradient-based method. We see that, no matter the initial $\lambda$, the validation error rapidly converges to the low validation error trajectory.
 
 ```{python}
 #| label: fig-ho
@@ -205,8 +205,8 @@ plt.legend()
 plt.show()
 ```
 
-In @fig-lambdatraj, we can see how the $l_2$ penalty changes over the epochs. The rapid convergence of  $\lambda$ to the low $\lambda$ values (and the consequent drop in the validation error) is striking. The actual [@pedregosa2016hyperparameter] has a complex set of tolerances that vary over update epochs to ensure theoretical convergence of the HO algorithm as a whole. Even without that, it performs well with fixed tolerances.
+In @fig-lambdatraj, we can see how the $l_2$ penalty changes over the epochs. The rapid convergence of $\lambda$ to the low $\lambda$ values (and the consequent drop in the validation error) is striking. The actual [@pedregosa2016hyperparameter] has a complex set of tolerances that vary over update epochs to ensure theoretical convergence of the HO algorithm as a whole. Even without that, it performs well with fixed tolerances.
 
 ## Drawbacks
 
-The main drawback to this methodology is that it requires the Hessian to be invertible, even if you don't have to calculate it exactly. In practice, the Hessian is rarely invertible in deep learning problems [@sagun2016eigenvalues]. In addition, the conjugate gradient descent method I use is also rather slow; the HO gradient method took about 10 minutes to run. Despite that, I think this method has real advantages as it can converge to  the correct $\lambda$. Grid search, by contrast, will never find this $\lambda$ unless it is part of the set of considered hyperparameters. 
+The main drawback to this methodology is that it requires the Hessian to be invertible, even if you don't have to calculate it exactly. In practice, the Hessian is rarely invertible in deep learning problems [@sagun2016eigenvalues]. In addition, the conjugate gradient descent method I use is also rather slow; the HO gradient method took about 10 minutes to run. Despite that, I think this method has real advantages as it can converge to the correct $\lambda$. Grid search, by contrast, will never find this $\lambda$ unless it is part of the set of considered hyperparameters.
