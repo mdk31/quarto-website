@@ -104,7 +104,7 @@ v_2 &= v_1 - v_1 \dfrac{\partial^2 \mathcal{L}_T}{\partial \mathbf{w} \partial \
 \end{align*}
 $$
 
-This is simple to implement in PyTorch because of the ease in calculating vector-Jacobian products. Here is an example where we calculate the Hessian inverse of:
+This is simple to implement in PyTorch because of the ease in calculating vector-Jacobian products. To illustrate, the following is a simple example where we use the Neumann approximation to calculate the Hessian inverse of:
 
 $$
 x_1^3 + x_2^3, \quad x_1 = x_2 = 0.1

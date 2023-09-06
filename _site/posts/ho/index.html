@@ -249,7 +249,7 @@ v_2 &amp;= v_1 - v_1 \dfrac{\partial^2 \mathcal{L}_T}{\partial \mathbf{w} \parti
 &amp;\ldots
 \end{align*}
 \]</span></p>
-<p>This is simple to implement in PyTorch because of the ease in calculating vector-Jacobian products. Here is an example where we calculate the Hessian inverse of:</p>
+<p>This is simple to implement in PyTorch because of the ease in calculating vector-Jacobian products. To illustrate, the following is a simple example where we use the Neumann approximation to calculate the Hessian inverse of:</p>
 <p><span class="math display">\[
 x_1^3 + x_2^3, \quad x_1 = x_2 = 0.1
 \]</span></p>
@@ -279,7 +279,7 @@ x_1^3 + x_2^3, \quad x_1 = x_2 = 0.1
 <span id="cb1-23"><a href="#cb1-23" aria-hidden="true" tabindex="-1"></a>grad_y <span class="op">=</span> torch.autograd.grad(y, inputs, create_graph<span class="op">=</span><span class="va">True</span>)</span>
 <span id="cb1-24"><a href="#cb1-24" aria-hidden="true" tabindex="-1"></a>neumann_approx <span class="op">=</span> neumann_series(v <span class="op">=</span> v, f <span class="op">=</span> grad_y, I <span class="op">=</span> <span class="dv">50</span>)</span>
 <span id="cb1-25"><a href="#cb1-25" aria-hidden="true" tabindex="-1"></a>torch.isclose(v <span class="op">@</span> invhess, neumann_approx)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
-<div class="cell-output cell-output-display" data-execution_count="41">
+<div class="cell-output cell-output-display" data-execution_count="1">
 <pre><code>tensor([True, True])</code></pre>
 </div>
 </div>
