@@ -3,7 +3,9 @@ title: "My Website"
 toc: false
 listing: 
   - id: posts
-    contents: posts/*{.qmd,.markdown}
+    contents: 
+      - posts/*/*{.qmd,.markdown}
+      - posts/*{.qmd,.markdown}
     sort: "date desc"
     type: default
     fields: [date, title, description, categories, author, reading-time]
@@ -12,9 +14,8 @@ listing:
     filter-ui: false
     page-size: 5
 ---
+
 ## Posts
 
 ::: {#posts}
 :::
-
-
