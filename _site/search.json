@@ -1,5 +1,19 @@
 [
   {
+    "objectID": "index.html#posts",
+    "href": "index.html#posts",
+    "title": "My Website",
+    "section": "Posts",
+    "text": "Posts"
+  },
+  {
+    "objectID": "posts/index.html",
+    "href": "posts/index.html",
+    "title": "Scalable Bootstrap Algorithms for Causal Inference with Large Real-World Data",
+    "section": "",
+    "text": "We are well-past the 2022 ACIC conference but, since I’m starting a new website and don’t have anything to post, I’d figure I’d show what I’m currently working on. This is the poster I presented at the conference in May. It’s still a work in progress and I’m currently working with Michele Santacatterina and Lin Wang on finalizing the paper."
+  },
+  {
     "objectID": "posts/ho/index.html",
     "href": "posts/ho/index.html",
     "title": "Hyperparameter Optimization",
@@ -21,17 +35,10 @@
     "text": "Drawbacks\nThe main drawback to this methodology is that it requires the Hessian to be invertible, even if you don’t have to calculate it exactly. In practice, the Hessian is rarely invertible in deep learning problems (Sagun, Bottou, and LeCun 2016). In addition, the conjugate gradient descent method I use is also rather slow; the HO gradient method took about 10 minutes to run. Despite that, I think this method has real advantages as it can converge to the correct \\(\\lambda\\). Grid search, by contrast, will never find this \\(\\lambda\\) unless it is part of the set of considered hyperparameters."
   },
   {
-    "objectID": "index.html",
-    "href": "index.html",
-    "title": "My Website",
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "About",
     "section": "",
-    "text": "machine learning\n\n\n\n\n\n\n\n\n\n\n\n7 min\n\n\n\n\n\n\n\n\n\n\n\n\n\n\ncausal inference\n\n\npresentation\n\n\n\n\nMay 2022 ACIC poster presentation\n\n\n\n\n\n\nAug 5, 2022\n\n\nMatt Kosko\n\n\n1 min\n\n\n\n\n\n\nNo matching items"
-  },
-  {
-    "objectID": "index.html#posts",
-    "href": "index.html#posts",
-    "title": "My Website",
-    "section": "",
-    "text": "machine learning\n\n\n\n\n\n\n\n\n\n\n\n7 min\n\n\n\n\n\n\n\n\n\n\n\n\n\n\ncausal inference\n\n\npresentation\n\n\n\n\nMay 2022 ACIC poster presentation\n\n\n\n\n\n\nAug 5, 2022\n\n\nMatt Kosko\n\n\n1 min\n\n\n\n\n\n\nNo matching items"
+    "text": "I’m currently a data scientist in Washington, DC and I’m currently working on a project applying bootstrap techniques to causal inference."
   }
 ]
