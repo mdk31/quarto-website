@@ -15,4 +15,4 @@ about:
     href: resume.pdf
 ---
 
-I'm currently a data scientist in Washington, DC and I'm currently working on a project applying bootstrap techniques to causal inference.
+I'm currently a data scientist in Washington DC and working on a project applying bootstrap techniques to causal inference.
