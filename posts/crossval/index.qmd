@@ -1,0 +1,78 @@
+---
+title: "Generalization Error Estimation Methods for Fine-Tuned Models"
+author: "Matt Kosko"
+jupyter: python3
+draft: true
+bibliography: /Users/macbookair/Documents/quarto-website/posts/references.bib
+filters:
+  - pseudocode
+---
+
+# Introduction
+
+One of the great advantages of the proliferation of a large number of pre-trained transformed based large language models (LLMs) like BERT and GPT is the ability of the models to be fruitfully applied to a variety of downstream tasks [@weiwei2021pretrained]. 
+
+After we train a model, we want to examine how well the model performs on data that was not seen by the model; we wish to validate the model by looking it ats *generalization* performance on an independent "test" set [@hastie2009elements, p. 219].
+
+Following the notation of [@hasties2009elements] given an outcome $Y$ and a vector of inputs $X$, the generalization error is given by:
+
+\[
+\textrm{Err}_\mathcal{T} \equiv \textrm{E}_{X,Y|\mathcal{T}}\left[L(Y, \hat{f}(X))|\mathcal{T}\right]
+\]
+
+In other words, imagine that we train our model and learn $\hat{f}$ from $\mathcal{T}$, we then average the loss over all future draws of data $(X, Y)$ from its joint distribution. 
+
+By the law of iterated expectations
+
+\[
+\textrm{E}[\textrm{Err}_\mathcal{T}] = \textrm{E}_\mathcal{T}\textrm{E}_{X,Y|\mathcal{T}}\left[L(Y, \hat{f}(X))|\mathcal{T}\right]
+\]
+
+
+# Validation Methods
+
+In K-fold cross validation, 
+
+
+
+The goal of these methods is to get a good estimate of the generalization or "test" error [@ghojogh2019theory, @hastie2009elements] 
+
+
+One of the simplest methods for model validation is by using data-splitting, where data is divided into a train set $\mathcal{T}$ and a test set $\mathcal{R}$ [@harrell2001regression, @ghojogh2019theory]. [@harrell2001regression, p. 112] lists mutliple problems with simple data splitting, including reduction in the sample size for training and noise in the validation estimate (a second split may report radically different results). In the large data setting, these concerns are attenuated somewhat. During pre-training, language models can be trained on corpuses consisting of hundreds of millions or even billions of words; BERT for example was pre-trained on BookCorpus and English Wikipedia, consisting of 800M and 2.5B words respectively [@devlin2018bert]. 
+
+```pseudocode
+#| label: alg-quicksort
+#| html-indent-size: "1.2em"
+#| html-comment-delimiter: "//"
+#| html-line-number: true
+#| html-line-number-punc: ":"
+#| html-no-end: false
+#| pdf-placement: "htb!"
+#| pdf-line-number: true
+#| 
+
+\begin{algorithm}
+\caption{Quicksort}
+\begin{algorithmic}
+\Procedure{Quicksort}{$A, p, r$}
+  \If{$p < r$}
+    \State $q = $ \Call{Partition}{$A, p, r$}
+    \State \Call{Quicksort}{$A, p, q - 1$}
+    \State \Call{Quicksort}{$A, q + 1, r$}
+  \EndIf
+\EndProcedure
+\Procedure{Partition}{$A, p, r$}
+  \State $x = A[r]$
+  \State $i = p - 1$
+  \For{$j = p$ \To $r - 1$}
+    \If{$A[j] < x$}
+      \State $i = i + 1$
+      \State exchange
+      $A[i]$ with     $A[j]$
+    \EndIf
+    \State exchange $A[i]$ with $A[r]$
+  \EndFor
+\EndProcedure
+\end{algorithmic}
+\end{algorithm}
+```
