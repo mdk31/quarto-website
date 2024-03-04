@@ -2,6 +2,9 @@
 title: "Generalization Error Estimation Methods for Fine-Tuned Models"
 author: "Matt Kosko"
 jupyter: python3
+categories:
+  - machine learning
+  - validation
 draft: false
 bibliography: /Users/macbookair/Documents/quarto-website/posts/references.bib
 ---
