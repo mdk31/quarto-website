@@ -2,6 +2,7 @@
   {
     "listing": "/index.html",
     "items": [
+      "/posts/crossval/index.html",
       "/posts/ho/index.html",
       "/posts/index.html"
     ]

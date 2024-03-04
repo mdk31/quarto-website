@@ -8,7 +8,7 @@
 
 <meta name="author" content="Matt Kosko">
 
-<title>Matt Kosko’s Website - Generalization Error Estimation Methods for Small, Fine-Tuned Datasets</title>
+<title>Matt Kosko’s Website - Generalization Error Estimation Methods for Fine-Tuned Models</title>
 <style>
 code{white-space: pre-wrap;}
 span.smallcaps{font-variant: small-caps;}
@@ -20,6 +20,40 @@ ul.task-list li input[type="checkbox"] {
   width: 0.8em;
   margin: 0 0.8em 0.2em -1em; /* quarto-specific, see https://github.com/quarto-dev/quarto-cli/issues/4556 */ 
   vertical-align: middle;
+}
+/* CSS for syntax highlighting */
+pre > code.sourceCode { white-space: pre; position: relative; }
+pre > code.sourceCode > span { display: inline-block; line-height: 1.25; }
+pre > code.sourceCode > span:empty { height: 1.2em; }
+.sourceCode { overflow: visible; }
+code.sourceCode > span { color: inherit; text-decoration: inherit; }
+div.sourceCode { margin: 1em 0; }
+pre.sourceCode { margin: 0; }
+@media screen {
+div.sourceCode { overflow: auto; }
+}
+@media print {
+pre > code.sourceCode { white-space: pre-wrap; }
+pre > code.sourceCode > span { text-indent: -5em; padding-left: 5em; }
+}
+pre.numberSource code
+  { counter-reset: source-line 0; }
+pre.numberSource code > span
+  { position: relative; left: -4em; counter-increment: source-line; }
+pre.numberSource code > span > a:first-child::before
+  { content: counter(source-line);
+    position: relative; left: -1em; text-align: right; vertical-align: baseline;
+    border: none; display: inline-block;
+    -webkit-touch-callout: none; -webkit-user-select: none;
+    -khtml-user-select: none; -moz-user-select: none;
+    -ms-user-select: none; user-select: none;
+    padding: 0 4px; width: 4em;
+  }
+pre.numberSource { margin-left: 3em;  padding-left: 4px; }
+div.sourceCode
+  {   }
+@media screen {
+pre > code.sourceCode > span > a:first-child::before { text-decoration: underline; }
 }
 /* CSS for citations */
 div.csl-bib-body { }
@@ -77,7 +111,9 @@ div.csl-indent {
     "search-submit-button-title": "Submit"
   }
 }</script>
-<link href="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.min.css" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.min.js" integrity="sha512-c3Nl8+7g4LMSTdrm621y7kf9v3SDPnhxLNhcjFJbKECVnmZHTdo+IRO05sNLTH/D3vA6u1X32ehoLC7WFVdheg==" crossorigin="anonymous"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jquery/3.5.1/jquery.min.js" integrity="sha512-bLT0Qm9VnAYZDflyKcBaQ2gg0hSYNQrJ8RilYldYQ1FxQYoCLtUjuuRuZo+fjqhx/qtq/1itJ0C2ejDxltZVFg==" crossorigin="anonymous"></script>
+<script type="application/javascript">define('jquery', [],function() {return window.jQuery;})</script>
 
   <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
   <script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-chtml-full.js" type="text/javascript"></script>
@@ -134,7 +170,7 @@ div.csl-indent {
 
 <header id="title-block-header" class="quarto-title-block default">
 <div class="quarto-title">
-<h1 class="title">Generalization Error Estimation Methods for Small, Fine-Tuned Datasets</h1>
+<h1 class="title">Generalization Error Estimation Methods for Fine-Tuned Models</h1>
 </div>
 
 
@@ -157,28 +193,318 @@ div.csl-indent {
 
 <section id="introduction" class="level1">
 <h1>Introduction</h1>
-<p>After we train a model, we want to examine how well the model performs on data that was not seen by the model; we wish to validate the model by looking it ats <em>generalization</em> performance on an independent “test” set <span class="citation" data-cites="hastie2009elements">(<a href="#ref-hastie2009elements" role="doc-biblioref">Hastie et al. 2009, 2:219</a>)</span>.</p>
-<p>Following the notation of <span class="citation" data-cites="hasties2009elements">(<a href="#ref-hasties2009elements" role="doc-biblioref"><strong>hasties2009elements?</strong></a>)</span> given an outcome <span class="math inline">\(Y\)</span> and a vector of inputs <span class="math inline">\(X\)</span>, the generalization error is given by:</p>
-<p>[ <em> </em>{X,Y}]</p>
-<p>By the law of itereated</p>
-<p>In other words, imagine that we train our model and learn <span class="math inline">\(\hat{f}\)</span> from <span class="math inline">\(\mathcal{T}\)</span>, we then average the loss over all future draws of data <span class="math inline">\((X, Y)\)</span> from its joint distribution.</p>
+<p>One of the great advantages of the large increase in pre-trained transformer-based large language models (LLMs) like BERT and GPT is the ability of these models to be fruitfully applied to a variety of tasks they were not initially trained on <span class="citation" data-cites="wei2021pretrained">(<a href="#ref-wei2021pretrained" role="doc-biblioref">Wei, Xie, and Ma 2021</a>)</span>. In particular, these models can be <em>fine-tuned</em> for other tasks, using datasets that are much smaller than ones used train the original model; this is attractive precisely because you can leverage the enormous amount of information the model learned during pre-training on a task where labeled data is expensive to obtain <span class="citation" data-cites="church2021emerging">(<a href="#ref-church2021emerging" role="doc-biblioref">Church, Chen, and Ma 2021</a>)</span>.</p>
+<p>As with any task, once we fit a model we want to measure how well it performs, that is, we want to <em>validate</em> it. Those using LLMs in downstream tasks should remember that typical model validation techniques often used in large sample-size cases do not work as well when datasets are small. In particular, when datasets are too small for train/test spliting, you can make use of <em>resampling</em> methods like K-fold cross validation. In this post, we explore how resampling methods can improve validation estimation compared to data-splitting in the small N case.</p>
 </section>
-<section id="validation-methods" class="level1">
-<h1>Validation Methods</h1>
-<p>In K-fold cross validation,</p>
-<p>The goal of these methods is to get a good estimate of the generalization or “test” error <span class="citation" data-cites="ghojogh2019theory">Hastie et al. (<a href="#ref-hastie2009elements" role="doc-biblioref">2009</a>)</span></p>
-<p>One of the simplest methods for model validation is by using data-splitting, where data is divided into a train set <span class="math inline">\(\mathcal{T}\)</span> and a test set <span class="math inline">\(\mathcal{R}\)</span> <span class="citation" data-cites="harrell2001regression">Ghojogh and Crowley (<a href="#ref-ghojogh2019theory" role="doc-biblioref">2019</a>)</span>. <span class="citation" data-cites="harrell2001regression">(<a href="#ref-harrell2001regression" role="doc-biblioref">Harrell et al. 2001, 608:112</a>)</span> lists mutliple problems with simple data splitting, including reduction in the sample size for training and noise in the validation estimate (a second split may report radically different results). In the large data setting, these concerns are attenuated somewhat. During pre-training, language models can be trained on corpuses consisting of hundreds of millions or even billions of words; BERT for example was pre-trained on BookCorpus and English Wikipedia, consisting of 800M and 2.5B words respectively <span class="citation" data-cites="devlin2018bert">(<a href="#ref-devlin2018bert" role="doc-biblioref">Devlin et al. 2018</a>)</span>.</p>
-<div id="alg-quicksort" class="pseudocode-container" data-indent-size="1.2em" data-line-number="true" data-alg-title="Algorithm" data-pseudocode-index="1" data-no-end="false" data-comment-delimiter="//" data-line-number-punc=":">
-<div class="pseudocode">
-\begin{algorithm} \caption{Quicksort} \begin{algorithmic} \Procedure{Quicksort}{$A, p, r$} \If{$p &lt; r$} \State $q = $ \Call{Partition}{$A, p, r$} \State \Call{Quicksort}{$A, p, q - 1$} \State \Call{Quicksort}{$A, q + 1, r$} \EndIf \EndProcedure \Procedure{Partition}{$A, p, r$} \State $x = A[r]$ \State $i = p - 1$ \For{$j = p$ \To $r - 1$} \If{$A[j] &lt; x$} \State $i = i + 1$ \State exchange $A[i]$ with $A[j]$ \EndIf \State exchange $A[i]$ with $A[r]$ \EndFor \EndProcedure \end{algorithmic} \end{algorithm}
+<section id="validation" class="level1">
+<h1>Validation</h1>
+<p>When we say we want to see how well a model performs, we mean that we want to estimate its <em>generalization</em> performance on an independent “test” set with data that was not seen during training <span class="citation" data-cites="hastie2009elements">(<a href="#ref-hastie2009elements" role="doc-biblioref">Hastie et al. 2009, 2:219</a>)</span>.</p>
+<p>Following the notation of <span class="citation" data-cites="hastie2009elements">Hastie et al. (<a href="#ref-hastie2009elements" role="doc-biblioref">2009</a>)</span>, given an outcome <span class="math inline">\(Y\)</span>, a vector of inputs <span class="math inline">\(X\)</span>, and a loss function <span class="math inline">\(\mathcal{L}\)</span>, the generalization error is given by:</p>
+<p><span id="eq-errorT"><span class="math display">\[
+\textrm{Err}_\mathcal{T} \equiv \textrm{E}_{X,Y|\mathcal{T}}\left[L(Y, \hat{f}(X))|\mathcal{T}\right]
+\tag{1}\]</span></span></p>
+<p>In other words, the mean performance of the model trained using the training data <span class="math inline">\(\mathcal{T}\)</span> is averaged over all future draws of new datasets. The training data is fixed here.</p>
+<p>This tells us about validation of the trained <em>model</em> itself, how well it will perform conditional on having seen the training data <span class="math inline">\(\mathcal{T}\)</span>. Often, it is easier to get estimates of a different quantity, the expectation of this error over training sets <span class="citation" data-cites="hastie2009elements">(<a href="#ref-hastie2009elements" role="doc-biblioref">Hastie et al. 2009</a>)</span>:</p>
+<p><span id="eq-error"><span class="math display">\[
+\textrm{E}[\textrm{Err}_\mathcal{T}] = \textrm{E}_\mathcal{T}\textrm{E}_{X,Y|\mathcal{T}}\left[L(Y, \hat{f}(X))|\mathcal{T}\right]
+\tag{2}\]</span></span></p>
+<p>Resampling methods like K-fold cross-validation estimate this quantity (more on this below).</p>
+<section id="data-splitting" class="level2">
+<h2 class="anchored" data-anchor-id="data-splitting">Data-Splitting</h2>
+<p>The most straightforward method for validating a model is <em>data-splitting</em>, the classic train/test split method introduced in every machine learning textbook. The data is divided into a train set <span class="math inline">\(\mathcal{T}\)</span> and a test set <span class="math inline">\(\mathcal{R}\)</span> <span class="citation" data-cites="harrell2001regression ghojogh2019theory">(<a href="#ref-harrell2001regression" role="doc-biblioref">Harrell et al. 2001</a>; <a href="#ref-ghojogh2019theory" role="doc-biblioref">Ghojogh and Crowley 2019</a>)</span>. When the test set is held out, the resulting error estimates <a href="#eq-errorT">Equation&nbsp;1</a> rather than <a href="#eq-error">Equation&nbsp;2</a>.</p>
+</section>
+<section id="k-fold-cross-validation" class="level2">
+<h2 class="anchored" data-anchor-id="k-fold-cross-validation">K-Fold Cross-validation</h2>
+<p>In K-fold cross validation, the data is split into <span class="math inline">\(K\)</span> folds and then, for each fold, the model is trained on <span class="math inline">\(K-1\)</span> folds. A performance metric is estimated on each holdout fold and these metrics are then averaged over all folds. Repeat K-fold is the same procedure except it repeats the K-fold procedure multiple times. Because the training data is randomly partitioned into folds, it is not held constant and these methods estimate <a href="#eq-error">Equation&nbsp;2</a>.</p>
+</section>
+</section>
+<section id="choosing-a-method" class="level1">
+<h1>Choosing a Method</h1>
+<p>When data is abundant, data-splitting is the most obvious validation solution, for computational convenience and because it works well in those cases. There, the held-out test set is representative of the data as a whole. However, when datasets are small, problems can emerge with this method. For one thing, you are removing data that would be useful in training; as <span class="citation" data-cites="harrell2001regression">(<a href="#ref-harrell2001regression" role="doc-biblioref">Harrell et al. 2001, 608:109</a>)</span> notes, “The surest method to have a model fit the data at hand is to discard much of the data.” Secondly, because you are only doing one split, you may get a test set that is “fortuitous” and calculate an estimate of performance that is too optimistic <span class="citation" data-cites="harrell2001regression">(<a href="#ref-harrell2001regression" role="doc-biblioref">Harrell et al. 2001, 608:112</a>)</span>. Depending on sample size, a single split can lead to too noisy an estimate of model performance. In the large data setting, these concerns are attenuated somewhat. During pre-training, language models can be trained on corpuses consisting of hundreds of millions or even billions of words; BERT for example was pre-trained on BookCorpus and English Wikipedia, consisting of 800M and 2.5B words respectively <span class="citation" data-cites="devlin2018bert">(<a href="#ref-devlin2018bert" role="doc-biblioref">Devlin et al. 2018</a>)</span>.</p>
+<p>You might argue that you always should prefer data splitting, as the quantity of interest (how well the model performs) is given by <a href="#eq-errorT">Equation&nbsp;1</a>, which is only estimated with data-splitting. However, analysts often combine the training and test data and present a final model trained on both sets of data. In that case, the error obtained on the test set no longer estimates <a href="#eq-errorT">Equation&nbsp;1</a>, as the training error has changed. Moreover, in practice, <a href="#eq-error">Equation&nbsp;2</a> is a good estimate of the generalization performance of the model.</p>
+</section>
+<section id="data-generating-process" class="level1">
+<h1>Data Generating Process</h1>
+<p>To check different validation methods, we construct a classification task and apply an open-source LLM to it. We will test how well the distilBERT model can differentiate between text generated by two different GPT models, GPT-2 and distilGPT-2. Although a contrived example, it has analogies with real-world problems involving differentiating human from computer-generated text. We construct a highly imbalanced training set of 4000 observations where 80% of the observations are generated by GPT-2 while the other 20% are from the distilled version. The full code can be found on <a href="https://github.com/mdk31/crossvalidation">GitHub</a>. An example of the training data is shown below:</p>
+<div class="cell" data-execution_count="2">
+<div class="sourceCode cell-code" id="cb1"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb1-1"><a href="#cb1-1" aria-hidden="true" tabindex="-1"></a>train_dat.head()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="18">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">text</th>
+<th data-quarto-table-cell-role="th">label</th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">0</td>
+<td>surroundings.\n\n\n"I don't think he's a bad p...</td>
+<td>0</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">1</td>
+<td>complaint" filed in the U.S. district court fo...</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">2</td>
+<td>high by the way, the "lazy kid" wasn't a boy.\...</td>
+<td>1</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">3</td>
+<td>say, that if I was on the verge of becoming a ...</td>
+<td>1</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">4</td>
+<td>normal". "We are pleased with this particular ...</td>
+<td>0</td>
+</tr>
+</tbody>
+</table>
+
 </div>
 </div>
+</div>
+<p>We use three different validation methods, data-splitting, K-fold cross-validation, and repeat K-fold cross-validation.</p>
+</section>
+<section id="results" class="level1">
+<h1>Results</h1>
+<p>After constructing a single dataset according to our data-generating process, we perform 50 replications of each validation method. Because of the time it takes to run this many simulations, we deploy the simulation code to AWS and train every replication on a GPU. <a href="#fig-f1">Figure&nbsp;1</a> shows the F1-scores (a metric particularly good for imbalanced datasets). <a href="#fig-acc">Figure&nbsp;2</a> shows a similar plot for accuracy.</p>
+<div class="cell" data-execution_count="3">
+<div class="sourceCode cell-code" id="cb2"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb2-1"><a href="#cb2-1" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
+<span id="cb2-2"><a href="#cb2-2" aria-hidden="true" tabindex="-1"></a>sns.boxplot(x<span class="op">=</span><span class="st">'type'</span>, y<span class="op">=</span><span class="st">'eval_f1'</span>, data<span class="op">=</span>replications)</span>
+<span id="cb2-3"><a href="#cb2-3" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">'F1 Score'</span>)</span>
+<span id="cb2-4"><a href="#cb2-4" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Validation Method"</span>)</span>
+<span id="cb2-5"><a href="#cb2-5" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="fig-f1" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="index_files/figure-html/fig-f1-output-1.png" width="680" height="503" class="figure-img"></p>
+<figcaption class="figure-caption">Figure&nbsp;1: F1 Score (50 replications)</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<div class="cell" data-execution_count="4">
+<div class="sourceCode cell-code" id="cb3"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb3-1"><a href="#cb3-1" aria-hidden="true" tabindex="-1"></a>plt.figure(figsize<span class="op">=</span>(<span class="dv">8</span>, <span class="dv">6</span>))</span>
+<span id="cb3-2"><a href="#cb3-2" aria-hidden="true" tabindex="-1"></a>sns.boxplot(x<span class="op">=</span><span class="st">'type'</span>, y<span class="op">=</span><span class="st">'eval_accuracy'</span>, data<span class="op">=</span>replications)</span>
+<span id="cb3-3"><a href="#cb3-3" aria-hidden="true" tabindex="-1"></a>plt.ylabel(<span class="st">'Accuracy'</span>)</span>
+<span id="cb3-4"><a href="#cb3-4" aria-hidden="true" tabindex="-1"></a>plt.xlabel(<span class="st">"Validation Method"</span>)</span>
+<span id="cb3-5"><a href="#cb3-5" aria-hidden="true" tabindex="-1"></a>plt.show()</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display">
+<div id="fig-acc" class="quarto-figure quarto-figure-center anchored">
+<figure class="figure">
+<p><img src="index_files/figure-html/fig-acc-output-1.png" width="672" height="503" class="figure-img"></p>
+<figcaption class="figure-caption">Figure&nbsp;2: Accuracy (50 replications)</figcaption>
+</figure>
+</div>
+</div>
+</div>
+<p>We can see clearly that all the methods are centered around a similar value, except that the resampling methods show much greater precision. We can see this more formally by looking at the summary statistics:</p>
+<div class="cell" data-execution_count="5">
+<div class="sourceCode cell-code" id="cb4"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb4-1"><a href="#cb4-1" aria-hidden="true" tabindex="-1"></a>replications.groupby(<span class="st">'type'</span>)[[<span class="st">'eval_f1'</span>, <span class="st">'eval_accuracy'</span>]].agg([<span class="st">'mean'</span>, <span class="st">'var'</span>, <span class="st">'min'</span>, <span class="st">'max'</span>]).<span class="bu">round</span>(<span class="dv">6</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="21">
+<div>
+
+
+<table class="dataframe table table-sm table-striped small" data-quarto-postprocess="true" data-border="1">
+<thead>
+<tr class="header">
+<th data-quarto-table-cell-role="th"></th>
+<th colspan="4" data-quarto-table-cell-role="th" data-halign="left">eval_f1</th>
+<th colspan="4" data-quarto-table-cell-role="th" data-halign="left">eval_accuracy</th>
+</tr>
+<tr class="odd">
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th">mean</th>
+<th data-quarto-table-cell-role="th">var</th>
+<th data-quarto-table-cell-role="th">min</th>
+<th data-quarto-table-cell-role="th">max</th>
+<th data-quarto-table-cell-role="th">mean</th>
+<th data-quarto-table-cell-role="th">var</th>
+<th data-quarto-table-cell-role="th">min</th>
+<th data-quarto-table-cell-role="th">max</th>
+</tr>
+<tr class="header">
+<th data-quarto-table-cell-role="th">type</th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+<th data-quarto-table-cell-role="th"></th>
+</tr>
+</thead>
+<tbody>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">Data Splitting</td>
+<td>0.970468</td>
+<td>0.000031</td>
+<td>0.951487</td>
+<td>0.979247</td>
+<td>0.952650</td>
+<td>0.000078</td>
+<td>0.9225</td>
+<td>0.96625</td>
+</tr>
+<tr class="even">
+<td data-quarto-table-cell-role="th">K-Fold CV</td>
+<td>0.969023</td>
+<td>0.000009</td>
+<td>0.962684</td>
+<td>0.974449</td>
+<td>0.950285</td>
+<td>0.000023</td>
+<td>0.9400</td>
+<td>0.95900</td>
+</tr>
+<tr class="odd">
+<td data-quarto-table-cell-role="th">Repeat K-Fold CV</td>
+<td>0.968880</td>
+<td>0.000003</td>
+<td>0.965966</td>
+<td>0.972569</td>
+<td>0.950072</td>
+<td>0.000006</td>
+<td>0.9455</td>
+<td>0.95595</td>
+</tr>
+</tbody>
+</table>
+
+</div>
+</div>
+</div>
+<p>Illustrating the variance from a single split, there are replications where the data-splitting method returns accuracy scores as low as 0.92. We also see, as is obvious from the box plots, that the variance of the resampling methods are much smaller than those obtained by data-splitting.</p>
+<p>At first glance, these results don’t indicate why we want to use anything other than data-splitting. Yes, there’s variation but it’s not that extreme. In this case, there appears to be enough signal in the data that data-splitting works (although there is more variance as we mentioned). However, in an earlier version of this experiment, with a dataset size of about 1500, the model was merely predicting the majority class for every case, and the observed high variance in F1 and accuracy scores given by data-splitting would lead an analyst to incorrectly conclude that a model was doing better than guessing. In addition, this variance in data-splitting can lead to problems when validation is used to <em>choose</em> between models. To show this, we look at a computationally simpler example.</p>
+</section>
+<section id="model-selection" class="level1">
+<h1>Model Selection</h1>
+<p>For computational convenience, we consider how to choose neural network architecture and hyperparameters for use in a regression task. Consider the following data-generating process with 10 features:</p>
+<p><span class="math display">\[
+\begin{align*}
+y &amp;= \frac{1}{2}x_0 + \frac{3}{4} x_1^2 - \frac{3}{10}\sin(x_2) - \frac{1}{2}\sqrt{\left| x_3 \right|}x_1 + x_4\exp{x_5} + x_6\cos{x_7} - \frac{1}{4}x_8x_9^4 + \epsilon \\
+\epsilon &amp;\sim \textrm{Normal}(0, 25)
+\end{align*}
+\]</span></p>
+<p>The outcome is complex function of the predictors, with high-variance additive noise. It’s likely that noise will make it difficult to learn the underlying function in small sample sizes.</p>
+<p>We consider neural network estimators of the following form:</p>
+<div class="cell" data-execution_count="6">
+<div class="sourceCode cell-code" id="cb5"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb5-1"><a href="#cb5-1" aria-hidden="true" tabindex="-1"></a><span class="kw">class</span> Net(nn.Module):</span>
+<span id="cb5-2"><a href="#cb5-2" aria-hidden="true" tabindex="-1"></a>  <span class="kw">def</span> <span class="fu">__init__</span>(<span class="va">self</span>, num_layers, input_size, hidden_size, output_size):</span>
+<span id="cb5-3"><a href="#cb5-3" aria-hidden="true" tabindex="-1"></a>    <span class="bu">super</span>(Net, <span class="va">self</span>).<span class="fu">__init__</span>()</span>
+<span id="cb5-4"><a href="#cb5-4" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.hidden_layers <span class="op">=</span> nn.ModuleList([nn.Linear(input_size, hidden_size)])</span>
+<span id="cb5-5"><a href="#cb5-5" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.hidden_layers.extend([nn.Linear(hidden_size, hidden_size) <span class="cf">for</span> _ <span class="kw">in</span> <span class="bu">range</span>(num_layers <span class="op">-</span> <span class="dv">2</span>)])</span>
+<span id="cb5-6"><a href="#cb5-6" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.output_layer <span class="op">=</span> nn.Linear(hidden_size, output_size)</span>
+<span id="cb5-7"><a href="#cb5-7" aria-hidden="true" tabindex="-1"></a>    <span class="va">self</span>.activation <span class="op">=</span> nn.ReLU()</span>
+<span id="cb5-8"><a href="#cb5-8" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb5-9"><a href="#cb5-9" aria-hidden="true" tabindex="-1"></a>  <span class="kw">def</span> forward(<span class="va">self</span>, x):</span>
+<span id="cb5-10"><a href="#cb5-10" aria-hidden="true" tabindex="-1"></a>    <span class="cf">for</span> layer <span class="kw">in</span> <span class="va">self</span>.hidden_layers:</span>
+<span id="cb5-11"><a href="#cb5-11" aria-hidden="true" tabindex="-1"></a>      x <span class="op">=</span> <span class="va">self</span>.activation(layer(x))</span>
+<span id="cb5-12"><a href="#cb5-12" aria-hidden="true" tabindex="-1"></a>    x <span class="op">=</span> <span class="va">self</span>.output_layer(x)</span>
+<span id="cb5-13"><a href="#cb5-13" aria-hidden="true" tabindex="-1"></a>    <span class="cf">return</span> x</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We vary the number of hidden layers, hidden units in each layer, and weight decay hyperparameter:</p>
+<div class="cell" data-execution_count="7">
+<div class="sourceCode cell-code" id="cb6"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb6-1"><a href="#cb6-1" aria-hidden="true" tabindex="-1"></a>num_layers <span class="op">=</span> [<span class="dv">4</span>, <span class="dv">5</span>, <span class="dv">6</span>, <span class="dv">7</span>]</span>
+<span id="cb6-2"><a href="#cb6-2" aria-hidden="true" tabindex="-1"></a>hidden_size <span class="op">=</span> [<span class="dv">10</span>, <span class="dv">20</span>, <span class="dv">30</span>]</span>
+<span id="cb6-3"><a href="#cb6-3" aria-hidden="true" tabindex="-1"></a>weight_decay <span class="op">=</span> [<span class="fl">0.001</span>, <span class="fl">0.01</span>, <span class="fl">0.1</span>]</span>
+<span id="cb6-4"><a href="#cb6-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb6-5"><a href="#cb6-5" aria-hidden="true" tabindex="-1"></a>hyperparameter_combos <span class="op">=</span> itertools.product(num_layers, hidden_size, weight_decay)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+</div>
+<p>We generate a training set of 10,000 observations and a test set of 1,000,000 observations. After training the neural network on the full training set, we choose the “correct” model on the test set. The correct model is the one that gives the least error on the test set. We will compare data-splitting to K-fold cross validation and repeat K-fold cross validation in selecting the “correct” model.</p>
+<p>Let’s look at the top 10 validation losses on the test set (loss here is MSE):</p>
+<div class="cell" data-execution_count="8">
+<div class="sourceCode cell-code" id="cb7"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb7-1"><a href="#cb7-1" aria-hidden="true" tabindex="-1"></a>np.sort(val_loss_lst)[:<span class="dv">10</span>]</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="22">
+<pre><code>array([37.34210888, 38.02494065, 38.12532337, 38.33462859, 39.21283821,
+       39.6655187 , 39.81589583, 40.02950428, 40.56689551, 41.14703605])</code></pre>
+</div>
+</div>
+<p>Let’s see how often the validation methods choose the correct model.</p>
+<div class="cell" data-execution_count="9">
+<div class="sourceCode cell-code" id="cb9"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb9-1"><a href="#cb9-1" aria-hidden="true" tabindex="-1"></a>argsort_val <span class="op">=</span> np.argsort(val_loss_lst)</span>
+<span id="cb9-2"><a href="#cb9-2" aria-hidden="true" tabindex="-1"></a>first <span class="op">=</span> argsort_val[<span class="dv">0</span>]</span>
+<span id="cb9-3"><a href="#cb9-3" aria-hidden="true" tabindex="-1"></a>top_5 <span class="op">=</span> argsort_val[:<span class="dv">5</span>]</span>
+<span id="cb9-4"><a href="#cb9-4" aria-hidden="true" tabindex="-1"></a></span>
+<span id="cb9-5"><a href="#cb9-5" aria-hidden="true" tabindex="-1"></a>val_choice.groupby(<span class="st">'Type'</span>)[<span class="st">'Choice'</span>].agg(<span class="kw">lambda</span> x: <span class="bu">sum</span>(x <span class="op">==</span> first)<span class="op">/</span><span class="dv">50</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="23">
+<pre><code>Type
+Data Split    0.06
+KFold CV      0.12
+Repeat CV     0.14
+Name: Choice, dtype: float64</code></pre>
+</div>
+</div>
+<p>Although none of the methods do that well, given the relatively small sample size, the resampling methods choose the correct model far more often. Given that we saw many of the test sizes were similar, we next see how often each validation method chooses the among the 5 smallest-error models.</p>
+<div class="cell" data-execution_count="10">
+<div class="sourceCode cell-code" id="cb11"><pre class="sourceCode python code-with-copy"><code class="sourceCode python"><span id="cb11-1"><a href="#cb11-1" aria-hidden="true" tabindex="-1"></a>val_choice.groupby(<span class="st">'Type'</span>)[<span class="st">'Choice'</span>].agg(<span class="kw">lambda</span> x: x.isin(top_5).<span class="bu">sum</span>()<span class="op">/</span><span class="dv">50</span>)</span></code><button title="Copy to Clipboard" class="code-copy-button"><i class="bi"></i></button></pre></div>
+<div class="cell-output cell-output-display" data-execution_count="24">
+<pre><code>Type
+Data Split    0.34
+KFold CV      0.54
+Repeat CV     0.46
+Name: Choice, dtype: float64</code></pre>
+</div>
+</div>
+<p>We see that the resampling methods now choose the correct model about half the time, while simple data-splitting only works about 1/3 of the time.</p>
+</section>
+<section id="conclusion" class="level1">
+<h1>Conclusion</h1>
+<p>For large datasets with a large signal-to-noise ratio, data-splitting does not pose a problem and is a computationally simpler form of validation. But when datasets are small, even when working with a sophisticated pre-trained model, analysts should consider resampling methods.</p>
+<!-- ```pseudocode -->
+<!-- #| label: alg-quicksort -->
+<!-- #| html-indent-size: "1.2em" -->
+<!-- #| html-comment-delimiter: "//" -->
+<!-- #| html-line-number: true -->
+<!-- #| html-line-number-punc: ":" -->
+<!-- #| html-no-end: false -->
+<!-- #| pdf-placement: "htb!" -->
+<!-- #| pdf-line-number: true -->
+<!-- #|  -->
+<!-- \begin{algorithm} -->
+<!-- \caption{Quicksort} -->
+<!-- \begin{algorithmic} -->
+<!-- \Procedure{Quicksort}{$A, p, r$} -->
+<!--   \If{$p < r$} -->
+<!--     \State $q = $ \Call{Partition}{$A, p, r$} -->
+<!--     \State \Call{Quicksort}{$A, p, q - 1$} -->
+<!--     \State \Call{Quicksort}{$A, q + 1, r$} -->
+<!--   \EndIf -->
+<!-- \EndProcedure -->
+<!-- \Procedure{Partition}{$A, p, r$} -->
+<!--   \State $x = A[r]$ -->
+<!--   \State $i = p - 1$ -->
+<!--   \For{$j = p$ \To $r - 1$} -->
+<!--     \If{$A[j] < x$} -->
+<!--       \State $i = i + 1$ -->
+<!--       \State exchange -->
+<!--       $A[i]$ with     $A[j]$ -->
+<!--     \EndIf -->
+<!--     \State exchange $A[i]$ with $A[r]$ -->
+<!--   \EndFor -->
+<!-- \EndProcedure -->
+<!-- \end{algorithmic} -->
+<!-- \end{algorithm} -->
+<!-- ``` -->
 
 
 
 </section>
 
 <div id="quarto-appendix" class="default"><section class="quarto-appendix-contents" role="doc-bibliography"><h2 class="anchored quarto-appendix-heading">References</h2><div id="refs" class="references csl-bib-body hanging-indent" role="list">
+<div id="ref-church2021emerging" class="csl-entry" role="listitem">
+Church, Kenneth Ward, Zeyu Chen, and Yanjun Ma. 2021. <span>“Emerging Trends: A Gentle Introduction to Fine-Tuning.”</span> <em>Natural Language Engineering</em> 27 (6): 763–78.
+</div>
 <div id="ref-devlin2018bert" class="csl-entry" role="listitem">
 Devlin, Jacob, Ming-Wei Chang, Kenton Lee, and Kristina Toutanova. 2018. <span>“Bert: Pre-Training of Deep Bidirectional Transformers for Language Understanding.”</span> <em>arXiv Preprint arXiv:1810.04805</em>.
 </div>
@@ -190,6 +516,9 @@ Harrell, Frank E et al. 2001. <em>Regression Modeling Strategies: With Applicati
 </div>
 <div id="ref-hastie2009elements" class="csl-entry" role="listitem">
 Hastie, Trevor, Robert Tibshirani, Jerome H Friedman, and Jerome H Friedman. 2009. <em>The Elements of Statistical Learning: Data Mining, Inference, and Prediction</em>. Vol. 2. Springer.
+</div>
+<div id="ref-wei2021pretrained" class="csl-entry" role="listitem">
+Wei, Colin, Sang Michael Xie, and Tengyu Ma. 2021. <span>“Why Do Pretrained Language Models Help in Downstream Tasks? An Analysis of Head and Prompt Tuning.”</span> <em>Advances in Neural Information Processing Systems</em> 34: 16158–70.
 </div>
 </div></section></div></main> <!-- /main -->
 <script id="quarto-html-after-body" type="application/javascript">
@@ -426,30 +755,6 @@ window.document.addEventListener("DOMContentLoaded", function (event) {
 });
 </script>
 </div> <!-- /content -->
-<script src="https://cdn.jsdelivr.net/npm/pseudocode@latest/build/pseudocode.min.js" type="text/javascript"></script>
-<script type="text/javascript">
-(function(d) {
-  d.querySelectorAll(".pseudocode-container").forEach(function(el) {
-    let pseudocodeOptions = {
-      indentSize: el.dataset.indentSize || "1.2em",
-      commentDelimiter: el.dataset.commentDelimiter || "//",
-      lineNumber: el.dataset.lineNumber === "true" ? true : false,
-      lineNumberPunc: el.dataset.lineNumberPunc || ":",
-      noEnd: el.dataset.noEnd === "true" ? true : false,
-      titlePrefix: el.dataset.algTitle || "Algorithm"
-    };
-    pseudocode.renderElement(el.querySelector(".pseudocode"), pseudocodeOptions);
-  });
-})(document);
-(function(d) {
-  d.querySelectorAll(".pseudocode-container").forEach(function(el) {
-    titleSpan = el.querySelector(".ps-root > .ps-algorithm > .ps-line > .ps-keyword")
-    titlePrefix = el.dataset.algTitle;
-    titleIndex = el.dataset.chapterLevel ? el.dataset.chapterLevel + "." + el.dataset.pseudocodeIndex : el.dataset.pseudocodeIndex;
-    titleSpan.innerHTML = titlePrefix + " " + titleIndex + " ";
-  });
-})(document);
-</script>
 
 
 

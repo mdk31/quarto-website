@@ -1,0 +1,49 @@
+---
+title: "Principal Component Analysis"
+draft: true
+bibliography: /Users/macbookair/Documents/quarto-website/posts/references.bib
+---
+
+Principal component analysis (PCA) is a very common unsupervised machine learning method. Essentially, PCA involves working with latent representations in the data that capture most of the variance.
+
+One thing that was confusing for me initially was how PCA was presented. Depending on the text, there are two equivalent ways of presenting it, the minimum reconstruction approach and maximum variance approach [@bishop2023deep].
+
+## Minimum Reconstruction Error
+
+Consider a series of p-dimensional vectors $x_1, \ldots, x_n$. Each vector can be represented as a linear combination of $p$ basis vectors. For example, the components of the vector are the representations of the vector with respect to the natural basis.
+
+$$
+x_{n} = \begin{bmatrix} x_{1n} \\ x_{2n} \\ \vdots \\ x_{pn} \end{bmatrix} = x_{1n}\begin{bmatrix} 1 \\ 0 \\ \vdots \\ 0 \end{bmatrix} + x_{2n}\begin{bmatrix} 0 \\ 1 \\ \vdots \\ 0 \end{bmatrix} + \dots + x_{pn}\begin{bmatrix} 0 \\ 0 \\ \vdots \\ 1 \end{bmatrix}= \sum_{i=1}^p x_{in}\mathbf{e}_i
+$$
+
+However, we can undertake a change of basis and represent this vector with respect to another basis. Consider a $p \times p$ matrix $V$ where the columns are orthonormal vectors.
+
+$$
+x_n = \sum_{i=1}^p \alpha_{in} \mathbf{v}_i
+$$
+
+We want to approximate the $x_i$s by a lower dimensional representation $q < p$ [@bishop2023deep, p. 499]. Without loss of generality, we approximate the $x_i$ by the first $q$ vectors,
+
+$$
+\hat{x}_n = \sum_{i=1}^q \beta_{in} \mathbf{v}_i + \sum_{i=q+1}^p b_i \mathbf{v}_i
+$$
+
+We will choose basis vectors $v_i$, $b_i$, and $\beta$ such that the reconstruction error is minimized:
+
+$$
+\min_{V, \{\beta_{ik}\}, \{b_i\}} \dfrac{1}{n} \sum_{k=1}^n \lVert \hat{x}_k - x_k \rVert_2^2
+$$
+
+Because $b_i$ are constant across datapoints, we will change the minimization and form of the reconstruction to:
+
+$$
+\hat{x}_n = \boldsymbol\mu + V_q \boldsymbol{\beta}_n
+$$
+
+This is the equation of an affine hyperplane of rank $q$ [@hastie2009elements, p. 535].
+
+## Maximum Variance
+
+https://chat.openai.com/share/8dbeef51-3c83-4a84-8f09-234ec9431a0a
+
+# References

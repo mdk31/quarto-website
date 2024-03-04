@@ -40,5 +40,26 @@
     "title": "About",
     "section": "",
     "text": "I’m currently a data scientist in Washington DC and working on a project applying bootstrap techniques to causal inference."
+  },
+  {
+    "objectID": "posts/crossval/index.html",
+    "href": "posts/crossval/index.html",
+    "title": "Generalization Error Estimation Methods for Fine-Tuned Models",
+    "section": "",
+    "text": "One of the great advantages of the large increase in pre-trained transformer-based large language models (LLMs) like BERT and GPT is the ability of these models to be fruitfully applied to a variety of tasks they were not initially trained on (Wei, Xie, and Ma 2021). In particular, these models can be fine-tuned for other tasks, using datasets that are much smaller than ones used train the original model; this is attractive precisely because you can leverage the enormous amount of information the model learned during pre-training on a task where labeled data is expensive to obtain (Church, Chen, and Ma 2021).\nAs with any task, once we fit a model we want to measure how well it performs, that is, we want to validate it. Those using LLMs in downstream tasks should remember that typical model validation techniques often used in large sample-size cases do not work as well when datasets are small. In particular, when datasets are too small for train/test spliting, you can make use of resampling methods like K-fold cross validation. In this post, we explore how resampling methods can improve validation estimation compared to data-splitting in the small N case."
+  },
+  {
+    "objectID": "posts/crossval/index.html#data-splitting",
+    "href": "posts/crossval/index.html#data-splitting",
+    "title": "Generalization Error Estimation Methods for Fine-Tuned Models",
+    "section": "Data-Splitting",
+    "text": "Data-Splitting\nThe most straightforward method for validating a model is data-splitting, the classic train/test split method introduced in every machine learning textbook. The data is divided into a train set \\(\\mathcal{T}\\) and a test set \\(\\mathcal{R}\\) (Harrell et al. 2001; Ghojogh and Crowley 2019). When the test set is held out, the resulting error estimates Equation 1 rather than Equation 2."
+  },
+  {
+    "objectID": "posts/crossval/index.html#k-fold-cross-validation",
+    "href": "posts/crossval/index.html#k-fold-cross-validation",
+    "title": "Generalization Error Estimation Methods for Fine-Tuned Models",
+    "section": "K-Fold Cross-validation",
+    "text": "K-Fold Cross-validation\nIn K-fold cross validation, the data is split into \\(K\\) folds and then, for each fold, the model is trained on \\(K-1\\) folds. A performance metric is estimated on each holdout fold and these metrics are then averaged over all folds. Repeat K-fold is the same procedure except it repeats the K-fold procedure multiple times. Because the training data is randomly partitioned into folds, it is not held constant and these methods estimate Equation 2."
   }
 ]

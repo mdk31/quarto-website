@@ -2,77 +2,256 @@
 title: "Generalization Error Estimation Methods for Fine-Tuned Models"
 author: "Matt Kosko"
 jupyter: python3
-draft: true
+draft: false
 bibliography: /Users/macbookair/Documents/quarto-website/posts/references.bib
-filters:
-  - pseudocode
 ---
+
+```{python}
+#| echo: false
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+import pickle
+import numpy as np
+import os
+replications = pd.read_csv('~/PycharmProjects/crossval/replications.csv')
+val_choice = pd.read_csv('~/PycharmProjects/crossval/validation_df.csv')
+train_dat = pd.read_csv('~/PycharmProjects/crossval/shuffled_train.csv')
+
+file_path = os.path.expanduser('~/PycharmProjects/crossval/chosen_files/true_result.pkl')
+with open(file_path, 'rb') as file:
+  val_loss_lst = pickle.load(file)
+```
 
 # Introduction
 
-One of the great advantages of the proliferation of a large number of pre-trained transformed based large language models (LLMs) like BERT and GPT is the ability of the models to be fruitfully applied to a variety of downstream tasks [@weiwei2021pretrained]. 
+One of the great advantages of the large increase in pre-trained transformer-based large language models (LLMs) like BERT and GPT is the ability of these models to be fruitfully applied to a variety of tasks they were not initially trained on [@wei2021pretrained]. In particular, these models can be *fine-tuned* for other tasks, using datasets that are much smaller than ones used train the original model; this is attractive precisely because you can leverage the enormous amount of information the model learned during pre-training on a task where labeled data is expensive to obtain [@church2021emerging].
 
-After we train a model, we want to examine how well the model performs on data that was not seen by the model; we wish to validate the model by looking it ats *generalization* performance on an independent "test" set [@hastie2009elements, p. 219].
+As with any task, once we fit a model we want to measure how well it performs, that is, we want to *validate* it. Those using LLMs in downstream tasks should remember that typical model validation techniques often  used in large sample-size cases do not work as well when datasets are small. In particular, when datasets are too small for train/test spliting, you can make use of *resampling* methods like K-fold cross validation. In this post, we explore how resampling methods can improve validation estimation compared to data-splitting in the small N case.
 
-Following the notation of [@hasties2009elements] given an outcome $Y$ and a vector of inputs $X$, the generalization error is given by:
+# Validation
 
-\[
+When we say we want to see how well a model performs, we mean that we want to estimate its *generalization* performance on an independent "test" set with data that was not seen during training [@hastie2009elements, p. 219].
+
+Following the notation of @hastie2009elements, given an outcome $Y$, a vector of inputs $X$, and a loss function $\mathcal{L}$, the generalization error is given by:
+
+$$
 \textrm{Err}_\mathcal{T} \equiv \textrm{E}_{X,Y|\mathcal{T}}\left[L(Y, \hat{f}(X))|\mathcal{T}\right]
-\]
+$$ {#eq-errorT}
 
-In other words, imagine that we train our model and learn $\hat{f}$ from $\mathcal{T}$, we then average the loss over all future draws of data $(X, Y)$ from its joint distribution. 
+In other words, the mean performance of the model trained using the training data $\mathcal{T}$ is averaged over all future draws of new datasets. The training data is fixed here.
 
-By the law of iterated expectations
+This tells us about validation of the trained *model* itself, how well it will perform conditional on having seen the training data $\mathcal{T}$. Often, it is easier to get estimates of a different quantity, the expectation of this error over training sets [@hastie2009elements]:
 
-\[
+$$
 \textrm{E}[\textrm{Err}_\mathcal{T}] = \textrm{E}_\mathcal{T}\textrm{E}_{X,Y|\mathcal{T}}\left[L(Y, \hat{f}(X))|\mathcal{T}\right]
-\]
+$$ {#eq-error}
+
+Resampling methods like K-fold cross-validation estimate this quantity (more on this below).
+
+## Data-Splitting
+
+The most straightforward method for validating a model is *data-splitting*, the classic train/test split method introduced in every machine learning textbook. The data is divided into a train set $\mathcal{T}$ and a test set $\mathcal{R}$ [@harrell2001regression; @ghojogh2019theory]. When the test set is held out, the resulting error estimates @eq-errorT rather than @eq-error.
+
+## K-Fold Cross-validation
+
+In K-fold cross validation, the data is split into $K$ folds and then, for each fold, the model is trained on $K-1$  folds. A performance metric is estimated on each holdout fold and these metrics are then averaged over all folds. Repeat K-fold is the same procedure except it repeats the K-fold procedure multiple times. Because the training data is randomly partitioned into folds, it is not held constant and these methods estimate @eq-error.
+ 
+# Choosing a Method
+
+When data is abundant, data-splitting is the most obvious validation solution, for computational convenience and because it works well in those cases. There, the held-out test set is representative of the data as a whole. However, when datasets are small, problems can emerge with this method. For one thing, you are removing data that would be useful in training; as [@harrell2001regression, p. 109] notes, "The surest method to have a model fit the data at hand is to discard much of the data." Secondly, because you are only doing one split, you may get a test set that is "fortuitous" and calculate an estimate of performance that is too optimistic [@harrell2001regression, p. 112]. Depending on sample size, a single split can lead to too noisy an estimate of model performance. In the large data setting, these concerns are attenuated somewhat. During pre-training, language models can be trained on corpuses consisting of hundreds of millions or even billions of words; BERT for example was pre-trained on BookCorpus and English Wikipedia, consisting of 800M and 2.5B words respectively [@devlin2018bert]. 
+
+You might argue that you always should prefer data splitting, as the quantity of interest (how well the model performs) is given by @eq-errorT, which is only estimated with data-splitting. However, analysts often combine the training and test data and present a final model trained on both sets of data. In that case, the error obtained on the test set no longer estimates @eq-errorT, as the training error has changed. Moreover, in practice, @eq-error is a good estimate of the generalization performance of the model.
 
 
-# Validation Methods
+# Data Generating Process
 
-In K-fold cross validation, 
+To check different validation methods, we construct a classification task and apply an open-source LLM to it. We will test how well the distilBERT model can differentiate between text generated by two different GPT models, GPT-2 and distilGPT-2. Although a contrived example, it has analogies with real-world problems involving differentiating human from computer-generated text. We construct a highly imbalanced training set of 4000 observations where 80% of the observations are generated by GPT-2 while the other 20% are from the distilled version. The full code can be found on [GitHub](https://github.com/mdk31/crossvalidation). An example of the training data is shown below:
 
-
-
-The goal of these methods is to get a good estimate of the generalization or "test" error [@ghojogh2019theory, @hastie2009elements] 
-
-
-One of the simplest methods for model validation is by using data-splitting, where data is divided into a train set $\mathcal{T}$ and a test set $\mathcal{R}$ [@harrell2001regression, @ghojogh2019theory]. [@harrell2001regression, p. 112] lists mutliple problems with simple data splitting, including reduction in the sample size for training and noise in the validation estimate (a second split may report radically different results). In the large data setting, these concerns are attenuated somewhat. During pre-training, language models can be trained on corpuses consisting of hundreds of millions or even billions of words; BERT for example was pre-trained on BookCorpus and English Wikipedia, consisting of 800M and 2.5B words respectively [@devlin2018bert]. 
-
-```pseudocode
-#| label: alg-quicksort
-#| html-indent-size: "1.2em"
-#| html-comment-delimiter: "//"
-#| html-line-number: true
-#| html-line-number-punc: ":"
-#| html-no-end: false
-#| pdf-placement: "htb!"
-#| pdf-line-number: true
-#| 
-
-\begin{algorithm}
-\caption{Quicksort}
-\begin{algorithmic}
-\Procedure{Quicksort}{$A, p, r$}
-  \If{$p < r$}
-    \State $q = $ \Call{Partition}{$A, p, r$}
-    \State \Call{Quicksort}{$A, p, q - 1$}
-    \State \Call{Quicksort}{$A, q + 1, r$}
-  \EndIf
-\EndProcedure
-\Procedure{Partition}{$A, p, r$}
-  \State $x = A[r]$
-  \State $i = p - 1$
-  \For{$j = p$ \To $r - 1$}
-    \If{$A[j] < x$}
-      \State $i = i + 1$
-      \State exchange
-      $A[i]$ with     $A[j]$
-    \EndIf
-    \State exchange $A[i]$ with $A[r]$
-  \EndFor
-\EndProcedure
-\end{algorithmic}
-\end{algorithm}
+```{python}
+train_dat.head()
 ```
+
+We use three different validation methods, data-splitting, K-fold cross-validation, and repeat K-fold cross-validation.
+
+# Results
+
+After constructing a single dataset according to our data-generating process, we perform 50 replications of each validation method. Because of the time it takes to run this many simulations, we deploy the simulation code to AWS and train every replication on a GPU. @fig-f1 shows the F1-scores (a metric particularly good for imbalanced datasets). @fig-acc shows a similar plot for accuracy. 
+
+
+```{python}
+#| label: fig-f1
+#| fig-cap: "F1 Score (50 replications)"
+
+plt.figure(figsize=(8, 6))
+sns.boxplot(x='type', y='eval_f1', data=replications)
+plt.ylabel('F1 Score')
+plt.xlabel("Validation Method")
+plt.show()
+```
+
+```{python}
+#| fig-cap: "Accuracy (50 replications)"
+#| label: fig-acc
+
+plt.figure(figsize=(8, 6))
+sns.boxplot(x='type', y='eval_accuracy', data=replications)
+plt.ylabel('Accuracy')
+plt.xlabel("Validation Method")
+plt.show()
+```
+
+We can see clearly that all the methods are centered around a similar value, except that the resampling methods show much greater precision. We can see this more formally by looking at the summary statistics: 
+
+```{python}
+replications.groupby('type')[['eval_f1', 'eval_accuracy']].agg(['mean', 'var', 'min', 'max']).round(6)
+```
+
+Illustrating the variance from a single split, there are replications where the data-splitting method returns accuracy scores as low as 0.92. We also see, as is obvious from the box plots, that the variance of the resampling methods are much smaller than those obtained by data-splitting.
+
+At first glance, these results don't indicate why we want to use anything other than data-splitting. Yes, there's variation but it's not that extreme. In this case, there appears to be enough signal in the data that data-splitting works (although there is more variance as we mentioned). However, in an earlier version of this experiment, with a dataset size of about 1500, the model was merely predicting the majority class for every case, and the observed high variance in F1 and accuracy scores given by data-splitting would lead an analyst to incorrectly conclude that a model was doing better than guessing. In addition, this variance in data-splitting can lead to problems when validation is used to *choose* between models. To show this, we look at a computationally simpler example.
+
+# Model Selection
+
+For computational convenience, we consider how to choose neural network architecture and hyperparameters for use in a regression task. Consider the following data-generating process with 10 features:
+
+$$
+\begin{align*}
+y &= \frac{1}{2}x_0 + \frac{3}{4} x_1^2 - \frac{3}{10}\sin(x_2) - \frac{1}{2}\sqrt{\left| x_3 \right|}x_1 + x_4\exp{x_5} + x_6\cos{x_7} - \frac{1}{4}x_8x_9^4 + \epsilon \\
+\epsilon &\sim \textrm{Normal}(0, 25)
+\end{align*}
+$$
+
+The outcome is complex function of the predictors, with high-variance additive noise. It's likely that noise will make it difficult to learn the underlying function in small sample sizes.
+
+We consider neural network estimators of the following form:
+
+```{python}
+#| eval: false
+class Net(nn.Module):
+  def __init__(self, num_layers, input_size, hidden_size, output_size):
+    super(Net, self).__init__()
+    self.hidden_layers = nn.ModuleList([nn.Linear(input_size, hidden_size)])
+    self.hidden_layers.extend([nn.Linear(hidden_size, hidden_size) for _ in range(num_layers - 2)])
+    self.output_layer = nn.Linear(hidden_size, output_size)
+    self.activation = nn.ReLU()
+
+  def forward(self, x):
+    for layer in self.hidden_layers:
+      x = self.activation(layer(x))
+    x = self.output_layer(x)
+    return x
+```
+
+We vary the number of hidden layers, hidden units in each layer, and weight decay hyperparameter: 
+
+```{python}
+#| eval: false
+
+num_layers = [4, 5, 6, 7]
+hidden_size = [10, 20, 30]
+weight_decay = [0.001, 0.01, 0.1]
+
+hyperparameter_combos = itertools.product(num_layers, hidden_size, weight_decay)
+```
+
+We generate a training set of 10,000 observations and a test set of 1,000,000 observations. After training the neural network on the full training set, we choose the "correct" model on the test set. The correct model is the one that gives the least error on the test set. We will compare data-splitting to K-fold cross validation and repeat K-fold cross validation in selecting the "correct" model.
+
+Let's look at the top 10 validation losses on the test set (loss here is MSE):
+
+```{python}
+np.sort(val_loss_lst)[:10]
+```
+
+Let's see how often the validation methods choose the correct model.
+
+```{python}
+argsort_val = np.argsort(val_loss_lst)
+first = argsort_val[0]
+top_5 = argsort_val[:5]
+
+val_choice.groupby('Type')['Choice'].agg(lambda x: sum(x == first)/50)
+```
+
+Although none of the methods do that well, given the relatively small sample size, the resampling methods choose the correct model far more often. Given that we saw many of the test sizes were similar, we next see how often each validation method chooses the among the 5 smallest-error models.
+
+```{python}
+val_choice.groupby('Type')['Choice'].agg(lambda x: x.isin(top_5).sum()/50)
+```
+
+We see that the resampling methods now choose the correct model about half the time, while simple data-splitting only works about 1/3 of the time.
+
+# Conclusion
+
+For large datasets with a large signal-to-noise ratio, data-splitting does not pose a problem and is a computationally simpler form of validation. But when datasets are small, even when working with a sophisticated pre-trained model, analysts should consider resampling methods. 
+
+
+<!-- ```pseudocode -->
+
+<!-- #| label: alg-quicksort -->
+
+<!-- #| html-indent-size: "1.2em" -->
+
+<!-- #| html-comment-delimiter: "//" -->
+
+<!-- #| html-line-number: true -->
+
+<!-- #| html-line-number-punc: ":" -->
+
+<!-- #| html-no-end: false -->
+
+<!-- #| pdf-placement: "htb!" -->
+
+<!-- #| pdf-line-number: true -->
+
+<!-- #|  -->
+
+<!-- \begin{algorithm} -->
+
+<!-- \caption{Quicksort} -->
+
+<!-- \begin{algorithmic} -->
+
+<!-- \Procedure{Quicksort}{$A, p, r$} -->
+
+<!--   \If{$p < r$} -->
+
+<!--     \State $q = $ \Call{Partition}{$A, p, r$} -->
+
+<!--     \State \Call{Quicksort}{$A, p, q - 1$} -->
+
+<!--     \State \Call{Quicksort}{$A, q + 1, r$} -->
+
+<!--   \EndIf -->
+
+<!-- \EndProcedure -->
+
+<!-- \Procedure{Partition}{$A, p, r$} -->
+
+<!--   \State $x = A[r]$ -->
+
+<!--   \State $i = p - 1$ -->
+
+<!--   \For{$j = p$ \To $r - 1$} -->
+
+<!--     \If{$A[j] < x$} -->
+
+<!--       \State $i = i + 1$ -->
+
+<!--       \State exchange -->
+
+<!--       $A[i]$ with     $A[j]$ -->
+
+<!--     \EndIf -->
+
+<!--     \State exchange $A[i]$ with $A[r]$ -->
+
+<!--   \EndFor -->
+
+<!-- \EndProcedure -->
+
+<!-- \end{algorithmic} -->
+
+<!-- \end{algorithm} -->
+
+<!-- ``` -->
