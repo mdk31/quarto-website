@@ -1,0 +1,10 @@
+---
+title: "Classification and Class Imbalance"
+author: "Matt Kosko"
+jupyter: python3
+draft: true
+---
+
+# Introduction
+
+In a recent job interview, I was working on a case study and I was asked how to handle a situation with imbalanced data. 
